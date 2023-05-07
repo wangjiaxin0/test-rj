@@ -1,0 +1,184 @@
+#include<stdio.h>
+#include<iostream>
+using namespace std;
+#define MAX 100
+struct node
+{
+	char ID[MAX], Various[MAX];
+	int Floor, Size, Price,Date[10];
+	node* next;
+	node():next(NULL),Floor(0)
+	{
+		memset(Date, 0, sizeof(Date));
+	}
+};
+int Turn_Char_To_Int(char* p)
+{
+	int res = 0;
+	for (int n = 0;n < strlen(p);n++)
+	{
+		res = res * 10 + (p[n]-48);
+	}
+	return res;
+}
+node* Create(FILE*fp)
+{
+	node* head = new node, * pre = head, * p;
+	while (1)
+	{
+		p = new node;
+		if (fscanf_s(fp, "%s", p->ID, 5) == EOF)break;
+		fscanf_s(fp, "%s", p->Various, 2);
+		char Size_temp[MAX], Price_temp[MAX];
+		fscanf_s(fp, "%s", Size_temp, 2);
+		fscanf_s(fp, "%s", Price_temp, 5);
+		for (int n = 0;n < 2;n++)
+		{
+			p->Floor = p->Floor * 10 + (p->ID[n]-48);
+		}
+		p->Price = Turn_Char_To_Int(Price_temp);
+		p->Size = Turn_Char_To_Int(Size_temp);
+		//memset(p->Date, p->Size, sizeof(p->Date));
+		for (int n = 0;n < 10;n++)
+			p->Date[n] = p->Size;
+		pre->next = p;
+		pre = p;
+	}
+	return head;
+}
+void Check_Empty(node* head)
+{
+	cout << "请输入要查找的日期(从今天起的第几天)和房间类型：";
+	int Thedate;
+	char Thevarious[MAX];
+	cin >> Thedate >> Thevarious;
+	node* p = head->next;
+	int n = 0;
+	while (p)
+	{
+		if (p->Size>0&&p->Date[Thedate + 1] > 0 && strcmp(p->Various,Thevarious)==0)
+		{
+			cout <<"房号："<< p->ID << "  类型：" << p->Various << "  楼层" << p->Floor << "  规格：" << p->Size << " 价格：" << p->Price <<"/天"<< endl;
+			n++;
+		}
+		p = p->next;
+	}
+	cout << "共" << n << "间客房可居住！"<<endl;
+}
+void print(node* head)
+{
+	node* p = head->next;
+	while (p)
+	{
+		cout << "房号：" << p->ID << "  类型：" << p->Various << "  楼层" << p->Floor << "  规格：" << p->Size << " 价格：" << p->Price << "/天" << endl;
+		p = p->next;
+	}
+}
+void Check_else(node* head,int Thedate)
+{
+	node* p = head->next;
+	int n = 0;
+	while (p)
+	{
+		if (p->Size > 0 && p->Date[Thedate - 1] > 0)
+		{
+			cout << "房号：" << p->ID << "  类型：" << p->Various << "  楼层" << p->Floor << "  规格：" << p->Size << " 价格：" << p->Price << "/天" << endl;
+			n++;
+		}
+		p = p->next;
+	}
+	cout << "共" << n << "间客房可居住！";
+}
+void scheduled(node* head)
+{
+	node* p = head->next;
+	cout << "请输入要预定的日期(从今天起的第几天)、房号和当天入住人数：";
+	int Thedate;
+	char TheId[MAX];
+	int num;
+	cin >> Thedate >> TheId>>num;
+	int flag = 0;
+	while (p)
+	{
+		if (0 == strcmp(p->ID, TheId) && p->Date[Thedate - 1] >0)
+		{
+			flag = 1;
+			p->Date[Thedate - 1] -= num;
+		}
+		p = p->next;
+	}
+	p = head->next;
+	if (flag == 1)
+		cout << "预定成功！" << endl;
+	else
+	{
+		cout << "该房间在您入住时间没有空余床位，给您推荐以下的选择" << endl;
+		Check_else(head, Thedate);
+	}
+}
+void unsubscribed(node* head)
+{
+	cout << "请输入退订房间号、人数以及入住日期";
+	char TheId[MAX];
+	int num,Thedate;
+	cin >> TheId >> num>>Thedate;
+	node* p = head->next;
+	while (p)
+	{
+		if (strcmp(p->ID, TheId) == 0)
+		{
+			p->Date[Thedate - 1] += num;
+		}
+		p = p->next;
+	}
+	cout << "退订成功！" << endl;
+}
+void menu()
+{
+	cout << "*************************************************************************************************" << endl;
+	cout << "                               小型酒店预订系统" << endl;
+	cout << "                               1.输入CheckEmpty进行查询空房操作。" << endl;
+	cout << "                               2.输入Scheduled进行预定操作。" << endl;
+	cout << "                               3.输入Show展示现在酒店房间情况。" << endl;
+	cout << "                               4.输入Unscheduled退订房间。" << endl;
+	cout << "                               5.输入over结束程序。" << endl;
+	cout << "************************************************************************************************" << endl;
+}
+int main()
+{
+	FILE* fp;
+	menu();
+	fopen_s(&fp, "001.txt", "r");
+	node* head = Create(fp);
+	char order[MAX];
+	cin >> order;
+	while (1)
+	{
+		if (0 == strcmp(order, "CheckEmpty"))
+		{
+			Check_Empty(head);
+		}
+		else if (0 == strcmp(order, "Scheduled"))
+		{
+			scheduled(head);
+		}
+		else if (0 == strcmp(order, "Show"))
+		{
+			print(head);
+		}
+		else if (0 == strcmp(order, "Unscheduled"))
+		{
+			unsubscribed(head);
+		}
+		else if (0 == strcmp(order, "over"))
+		{
+			cout << "感谢使用！";
+			break;
+		}
+		else
+		{
+			cout << "输入指令错误！";
+		}
+		cin >> order;
+	}
+}
